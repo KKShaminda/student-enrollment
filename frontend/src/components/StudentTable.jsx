@@ -24,6 +24,8 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [alert, setAlert] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const pageSize = 10;
 
   // Filtering logic
@@ -119,18 +121,7 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
                       <button
                         className="btn btn-sm btn-outline-danger"
                         title="Delete"
-                        onClick={async () => {
-                          if (window.confirm("Are you sure you want to delete this student?")) {
-                            const { deleteStudent } = await import("../services/studentService");
-                            await deleteStudent(s._id || s.id);
-                            // Reload table
-                            setLoading(true);
-                            const data = await fetchStudents();
-                            setStudents(data);
-                            setLoading(false);
-                            if (setStudentCount) setStudentCount(data.length);
-                          }
-                        }}
+                        onClick={() => setConfirmDelete(s)}
                       >
                         <Trash size={18} />
                       </button>
@@ -181,6 +172,8 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
             const { updateStudent } = await import("../services/studentService");
             await updateStudent(values);
             setEditStudent(null);
+            setAlert("Student updated successfully!");
+            setTimeout(() => setAlert(null), 2000);
             // Force reload by updating a local state
             setLoading(true);
             const data = await fetchStudents();
@@ -191,6 +184,56 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
           courses={[]}
           initialValues={editStudent}
         />
+      )}
+      {/* Centered Alert */}
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 2000,
+          minWidth: 300,
+        }}>
+          <div className="alert alert-success text-center shadow-lg rounded-4 py-3 px-4 fw-bold" role="alert">
+            {alert}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 3000,
+          minWidth: 350,
+          background: 'rgba(30,41,59,0.15)',
+          backdropFilter: 'blur(2px)'
+        }}>
+          <div className="shadow-lg rounded-4 bg-white p-4 text-center border">
+            <div className="fw-bold mb-2">Delete Student</div>
+            <div className="mb-3">Are you sure you want to delete <span className="fw-semibold">{confirmDelete.name}</span>?</div>
+            <div className="d-flex justify-content-center gap-2">
+              <button className="btn btn-danger px-3" onClick={async () => {
+                const { deleteStudent } = await import("../services/studentService");
+                await deleteStudent(confirmDelete._id || confirmDelete.id);
+                setConfirmDelete(null);
+                setAlert("Student deleted successfully!");
+                setTimeout(() => setAlert(null), 2000);
+                // Reload table
+                setLoading(true);
+                const data = await fetchStudents();
+                setStudents(data);
+                setLoading(false);
+                if (setStudentCount) setStudentCount(data.length);
+              }}>Delete</button>
+              <button className="btn btn-light px-3" onClick={() => setConfirmDelete(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
