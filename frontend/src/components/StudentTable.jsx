@@ -237,6 +237,5 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
       )}
     </>
   );
-}
-
+};
 export default StudentTable;
