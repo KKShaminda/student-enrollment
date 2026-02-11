@@ -1,14 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import StudentTable from "../components/StudentTable";
+import { fetchStudents } from "../services/studentService";
 
 const Dashboard = () => {
   const [studentCount, setStudentCount] = useState(0);
+  const [search, setSearch] = useState("");
+  const [course, setCourse] = useState("");
+  const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const students = await fetchStudents();
+        const uniqueCourses = Array.from(new Set(students.map(s => s.course).filter(Boolean)));
+        setCourses(uniqueCourses);
+      } catch {
+        setCourses([]);
+      }
+    };
+    loadCourses();
+  }, []);
 
   return (
     <div className="d-flex" style={{ minHeight: '100vh', overflow: 'hidden' }}>
       <main className="flex-grow-1 d-flex flex-column bg-light">
-        <Header />
+        <Header
+          search={search}
+          setSearch={setSearch}
+          course={course}
+          setCourse={setCourse}
+          courses={courses}
+        />
         <div className="flex-grow-1 overflow-auto p-4">
           {/* Page Title & Stats */}
           <div className="d-flex align-items-center justify-content-between mb-4">
@@ -23,7 +46,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <StudentTable setStudentCount={setStudentCount} />
+          <StudentTable setStudentCount={setStudentCount} search={search} course={course} />
         </div>
       </main>
     </div>

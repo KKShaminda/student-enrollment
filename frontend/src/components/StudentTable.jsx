@@ -13,17 +13,32 @@ const statusColorMap = {
   Active: "success",
   Pending: "warning",
   Completed: "primary",
+  Complete: "primary", 
 };
 
 
-const StudentTable = ({ setStudentCount }) => {
+const StudentTable = ({ setStudentCount, search = "", course = "" }) => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const totalPages = Math.ceil(students.length / pageSize);
-  const paginatedStudents = students.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Filtering logic
+  const filteredStudents = students.filter(s => {
+    const matchesSearch =
+      !search ||
+      s.name?.toLowerCase().includes(search.toLowerCase()) ||
+      s.email?.toLowerCase().includes(search.toLowerCase()) ||
+      s.studentId?.toLowerCase().includes(search.toLowerCase()) ||
+      s._id?.toLowerCase().includes(search.toLowerCase()) ||
+      s.id?.toLowerCase().includes(search.toLowerCase());
+    const matchesCourse = !course || s.course === course;
+    return matchesSearch && matchesCourse;
+  });
+
+  const totalPages = Math.ceil(filteredStudents.length / pageSize);
+  const paginatedStudents = filteredStudents.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   useEffect(() => {
     const load = async () => {
@@ -42,6 +57,10 @@ const StudentTable = ({ setStudentCount }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, course]);
+
   return (
     <div className="bg-white rounded border shadow-sm">
       <div className="table-responsive">
@@ -59,7 +78,7 @@ const StudentTable = ({ setStudentCount }) => {
               <tr><td colSpan={5} className="text-center">Loading...</td></tr>
             ) : error ? (
               <tr><td colSpan={5} className="text-danger text-center">{error}</td></tr>
-            ) : students.length === 0 ? (
+            ) : filteredStudents.length === 0 ? (
               <tr><td colSpan={5} className="text-center">No students found.</td></tr>
             ) : (
               paginatedStudents.map((s) => (
@@ -96,7 +115,7 @@ const StudentTable = ({ setStudentCount }) => {
       {/* Pagination (static for now) */}
         <div className="d-flex align-items-center justify-content-between px-4 py-3 border-top bg-light">
           <span className="text-muted small">
-            Showing {students.length > 0 ? `${(currentPage - 1) * pageSize + 1} to ${Math.min(currentPage * pageSize, students.length)}` : 0} of {students.length} students
+            Showing {filteredStudents.length > 0 ? `${(currentPage - 1) * pageSize + 1} to ${Math.min(currentPage * pageSize, filteredStudents.length)}` : 0} of {filteredStudents.length} students
           </span>
           <div className="btn-group" role="group">
             <button
