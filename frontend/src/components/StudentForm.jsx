@@ -19,19 +19,32 @@ const validate = async (values, allStudents) => {
   // Stricter email validation
   if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(values.email)) {
     errors.email = "Please enter a valid email address";
-  } else if (allStudents.some(s => s.email === values.email)) {
-    errors.email = "This email address already exists";
+  } else {
+    // Exclude current student from duplicate check
+    const isEditing = !!values._id || !!values.id;
+    const filtered = isEditing
+      ? allStudents.filter(s => (s._id || s.id) !== (values._id || values.id))
+      : allStudents;
+    if (filtered.some(s => s.email === values.email)) {
+      errors.email = "This email address already exists";
+    }
   }
   if (!/^\d{10}$/.test(values.phone)) {
     errors.phone = "Phone number must be exactly 10 digits";
-  } else if (allStudents.some(s => s.phone === values.phone)) {
-    errors.phone = "This phone number already exists";
+  } else {
+    const isEditing = !!values._id || !!values.id;
+    const filtered = isEditing
+      ? allStudents.filter(s => (s._id || s.id) !== (values._id || values.id))
+      : allStudents;
+    if (filtered.some(s => s.phone === values.phone)) {
+      errors.phone = "This phone number already exists";
+    }
   }
   return errors;
 };
 
-const StudentForm = ({ show, onClose, onSubmit, courses = [] }) => {
-  const [values, setValues] = useState(initialState);
+const StudentForm = ({ show, onClose, onSubmit, courses = [], initialValues }) => {
+  const [values, setValues] = useState(initialValues || initialState);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [allStudents, setAllStudents] = useState([]);
@@ -49,8 +62,13 @@ const StudentForm = ({ show, onClose, onSubmit, courses = [] }) => {
   React.useEffect(() => {
     if (show) {
       fetchStudents().then(setAllStudents);
+      if (initialValues) {
+        setValues(initialValues);
+      } else {
+        setValues(initialState);
+      }
     }
-  }, [show]);
+  }, [show, initialValues]);
 
   if (!show) return null;
 
@@ -81,8 +99,10 @@ const StudentForm = ({ show, onClose, onSubmit, courses = [] }) => {
         <div className="modal-content border-0 shadow-lg rounded-4">
           <div className="modal-header border-bottom-0 pb-0">
             <div>
-              <h5 className="modal-title fw-bold">Add New Student</h5>
-              <div className="text-muted small">Enter information to enroll a new student in the system.</div>
+              <h5 className="modal-title fw-bold">{values._id || values.id ? "Edit Student" : "Add New Student"}</h5>
+              <div className="text-muted small">
+                {values._id || values.id ? "Update student information." : "Enter information to enroll a new student in the system."}
+              </div>
             </div>
             <button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>
           </div>
@@ -180,7 +200,7 @@ const StudentForm = ({ show, onClose, onSubmit, courses = [] }) => {
             <div className="modal-footer border-0 px-0 pb-3 pt-0 d-flex justify-content-end gap-2">
               <button type="button" className="btn btn-light" onClick={onClose} disabled={submitting}>Cancel</button>
               <button type="submit" className="btn btn-primary d-flex align-items-center gap-2" disabled={submitting}>
-                Add Student
+                {values._id || values.id ? "Edit Student" : "Add Student"}
               </button>
             </div>
           </form>

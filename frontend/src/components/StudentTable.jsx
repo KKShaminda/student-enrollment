@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchStudents } from "../services/studentService";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash } from "lucide-react";
+import StudentForm from "./StudentForm";
 
 
 const getInitials = (name = "") => {
@@ -18,6 +19,7 @@ const statusColorMap = {
 
 
 const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => {
+  const [editStudent, setEditStudent] = useState(null);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,6 +44,7 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       try {
         const data = await fetchStudents();
         setStudents(data);
@@ -63,56 +66,81 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
   }, [search, course]);
 
   return (
-    <div className="bg-white rounded border shadow-sm">
-      <div className="table-responsive">
-        <table className="table align-middle mb-0">
-          <thead className="table-light">
-            <tr>
-              <th>Student Name</th>
-              <th>Contact Info</th>
-              <th>Course</th>
-              <th className="text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className="text-center">Loading...</td></tr>
-            ) : error ? (
-              <tr><td colSpan={5} className="text-danger text-center">{error}</td></tr>
-            ) : filteredStudents.length === 0 ? (
-              <tr><td colSpan={5} className="text-center">No students found.</td></tr>
-            ) : (
-              paginatedStudents.map((s) => (
-                <tr key={s._id || s.id}>
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      <div className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center fw-bold text-primary" style={{ width: 36, height: 36, fontSize: 14 }}>
-                        {getInitials(s.name)}
+    <>
+      <div className="bg-white rounded border shadow-sm">
+        <div className="table-responsive">
+          <table className="table align-middle mb-0">
+            <thead className="table-light">
+              <tr>
+                <th>Student Name</th>
+                <th>Contact Info</th>
+                <th>Course</th>
+                <th className="text-center">Status</th>
+                <th className="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={6} className="text-center">Loading...</td></tr>
+              ) : error ? (
+                <tr><td colSpan={6} className="text-danger text-center">{error}</td></tr>
+              ) : filteredStudents.length === 0 ? (
+                <tr><td colSpan={6} className="text-center">No students found.</td></tr>
+              ) : (
+                paginatedStudents.map((s) => (
+                  <tr key={s._id || s.id}>
+                    <td>
+                      <div className="d-flex align-items-center gap-2">
+                        <div className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center fw-bold text-primary" style={{ width: 36, height: 36, fontSize: 14 }}>
+                          {getInitials(s.name)}
+                        </div>
+                        <div className="d-flex flex-column">
+                          <span className="fw-semibold">{s.name}</span>
+                          <span className="text-muted small">ID: {s.studentId || s._id || s.id}</span>
+                        </div>
                       </div>
+                    </td>
+                    <td>
                       <div className="d-flex flex-column">
-                        <span className="fw-semibold">{s.name}</span>
-                        <span className="text-muted small">ID: {s.studentId || s._id || s.id}</span>
+                        <span>{s.email}</span>
+                        <span className="text-muted small">{s.phone}</span>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="d-flex flex-column">
-                      <span>{s.email}</span>
-                      <span className="text-muted small">{s.phone}</span>
-                    </div>
-                  </td>
-                  <td className="fw-medium">{s.course}</td>
-                  <td className="text-center">
-                    <span className={`badge rounded-pill bg-${statusColorMap[s.status] || "secondary"} px-3 py-2 fw-bold`}>
-                      {s.status || "-"}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                    <td className="fw-medium">{s.course}</td>
+                    <td className="text-center">
+                      <span className={`badge rounded-pill bg-${statusColorMap[s.status] || "secondary"} px-3 py-2 fw-bold`}>
+                        {s.status || "-"}
+                      </span>
+                    </td>
+                    <td className="text-center">
+                      <button className="btn btn-sm btn-outline-secondary me-2" title="Edit" onClick={() => setEditStudent(s)}>
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        title="Delete"
+                        onClick={async () => {
+                          if (window.confirm("Are you sure you want to delete this student?")) {
+                            const { deleteStudent } = await import("../services/studentService");
+                            await deleteStudent(s._id || s.id);
+                            // Reload table
+                            setLoading(true);
+                            const data = await fetchStudents();
+                            setStudents(data);
+                            setLoading(false);
+                            if (setStudentCount) setStudentCount(data.length);
+                          }
+                        }}
+                      >
+                        <Trash size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       {/* Pagination (static for now) */}
         <div className="d-flex align-items-center justify-content-between px-4 py-3 border-top bg-light">
           <span className="text-muted small">
@@ -144,8 +172,28 @@ const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => 
             </button>
           </div>
         </div>
-    </div>
+      </div>
+      {editStudent && (
+        <StudentForm
+          show={!!editStudent}
+          onClose={() => setEditStudent(null)}
+          onSubmit={async (values) => {
+            const { updateStudent } = await import("../services/studentService");
+            await updateStudent(values);
+            setEditStudent(null);
+            // Force reload by updating a local state
+            setLoading(true);
+            const data = await fetchStudents();
+            setStudents(data);
+            setLoading(false);
+            if (setStudentCount) setStudentCount(data.length);
+          }}
+          courses={[]}
+          initialValues={editStudent}
+        />
+      )}
+    </>
   );
-};
+}
 
 export default StudentTable;

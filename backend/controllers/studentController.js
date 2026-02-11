@@ -42,9 +42,9 @@ res.status(500).json({ message: error.message });
 exports.updateStudent = async (req, res) => {
 try {
 const student = await Student.findByIdAndUpdate(
-req.params.id,
-req.body,
-{ new: true, runValidators: true }
+  req.params.id,
+  req.body,
+  { returnDocument: 'after', runValidators: true }
 );
 
 if (!student) {
