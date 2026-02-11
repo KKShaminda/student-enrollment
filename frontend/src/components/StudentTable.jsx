@@ -13,11 +13,11 @@ const statusColorMap = {
   Active: "success",
   Pending: "warning",
   Completed: "primary",
-  Complete: "primary", 
+  Complete: "primary", // Ensure 'Complete' and 'Completed' both use blue
 };
 
 
-const StudentTable = ({ setStudentCount, search = "", course = "" }) => {
+const StudentTable = ({ setStudentCount, search = "", course = "", reload }) => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,8 +55,9 @@ const StudentTable = ({ setStudentCount, search = "", course = "" }) => {
     };
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reload]);
 
+  // Reset to first page when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [search, course]);

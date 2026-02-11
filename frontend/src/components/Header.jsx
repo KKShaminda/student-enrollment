@@ -1,7 +1,7 @@
 import React from "react";
 
 
-const Header = ({ search, setSearch, course, setCourse, courses }) => {
+const Header = ({ search, setSearch, course, setCourse, courses, onAddStudent }) => {
   return (
     <header className="d-flex align-items-center justify-content-between px-4 border-bottom bg-white" style={{ height: 80 }}>
       <div className="d-flex align-items-center flex-grow-1" style={{ maxWidth: 600, gap: 16 }}>
@@ -28,7 +28,7 @@ const Header = ({ search, setSearch, course, setCourse, courses }) => {
         </select>
       </div>
       <div className="d-flex align-items-center" style={{ gap: 16 }}>
-        <button className="btn btn-primary d-flex align-items-center gap-2 fw-semibold">
+        <button className="btn btn-primary d-flex align-items-center gap-2 fw-semibold" onClick={onAddStudent}>
           Add Student
         </button>
       </div>

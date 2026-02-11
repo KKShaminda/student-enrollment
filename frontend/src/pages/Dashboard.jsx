@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
+import StudentForm from "../components/StudentForm";
 import StudentTable from "../components/StudentTable";
-import { fetchStudents } from "../services/studentService";
+import { fetchStudents, createStudent } from "../services/studentService";
 
 const Dashboard = () => {
   const [studentCount, setStudentCount] = useState(0);
   const [search, setSearch] = useState("");
   const [course, setCourse] = useState("");
   const [courses, setCourses] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [reloadStudents, setReloadStudents] = useState(false);
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -22,6 +25,22 @@ const Dashboard = () => {
     loadCourses();
   }, []);
 
+  const handleAddStudentClick = () => setShowForm(true);
+  const handleFormClose = () => setShowForm(false);
+  const handleFormSubmit = async (student) => {
+    try {
+      await createStudent(student);
+      // Refresh course list
+      const students = await fetchStudents();
+      const uniqueCourses = Array.from(new Set(students.map(s => s.course).filter(Boolean)));
+      setCourses(uniqueCourses);
+      setShowForm(false);
+      setReloadStudents((prev) => !prev); // trigger reload in StudentTable
+    } catch (err) {
+      alert("Failed to add student.");
+    }
+  };
+
   return (
     <div className="d-flex" style={{ minHeight: '100vh', overflow: 'hidden' }}>
       <main className="flex-grow-1 d-flex flex-column bg-light">
@@ -31,6 +50,7 @@ const Dashboard = () => {
           course={course}
           setCourse={setCourse}
           courses={courses}
+          onAddStudent={handleAddStudentClick}
         />
         <div className="flex-grow-1 overflow-auto p-4">
           {/* Page Title & Stats */}
@@ -46,8 +66,9 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <StudentTable setStudentCount={setStudentCount} search={search} course={course} />
+          <StudentTable setStudentCount={setStudentCount} search={search} course={course} reload={reloadStudents} />
         </div>
+        <StudentForm show={showForm} onClose={handleFormClose} onSubmit={handleFormSubmit} courses={courses} />
       </main>
     </div>
   );
