@@ -16,9 +16,14 @@ const validate = async (values, allStudents) => {
   if (!/^([A-Za-z]+\s[A-Za-z]+.*)$/.test(values.name)) {
     errors.name = "Please enter a complete full name";
   }
-  // Email: no capital letters allowed
-  if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,6}$/.test(values.email)) {
-    errors.email = "Email must be lowercase and valid";
+  // Email: must be lowercase, valid, no consecutive dots, not start/end with dot, valid domain
+  const email = values.email;
+  // Require TLD to be at least 3 characters (e.g., .com, .org)
+  const emailRegex = /^[a-z0-9](?!.*\.\.)[a-z0-9._%+-]*[a-z0-9_%+-]@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{3,}$/;
+  if (!emailRegex.test(email)) {
+    errors.email = "Enter a valid, lowercase email with a domain ending of at least 3 letters (e.g., .com, .org)";
+  } else if (email.startsWith('.') || email.endsWith('.') || email.includes('..')) {
+    errors.email = "Email cannot start/end with dot or have consecutive dots";
   } else {
     const isEditing = !!values._id || !!values.id;
     const filtered = isEditing
@@ -100,6 +105,23 @@ const StudentForm = ({ show, onClose, onSubmit, courses = [], initialValues }) =
       ...prev,
       [name]: newValue,
     }));
+    // Clear error for this field if it is now valid
+    if (name === "email") {
+      const emailRegex = /^[a-z0-9](?!.*\.\.)[a-z0-9._%+-]*[a-z0-9_%+-]@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{3,}$/;
+      if (emailRegex.test(newValue) && !newValue.startsWith('.') && !newValue.endsWith('.') && !newValue.includes('..')) {
+        setErrors((prev) => ({ ...prev, email: undefined }));
+      }
+    }
+    if (name === "name" && errors.name) {
+      if (/^([A-Za-z]+\s[A-Za-z]+.*)$/.test(newValue)) {
+        setErrors((prev) => ({ ...prev, name: undefined }));
+      }
+    }
+    if (name === "phone" && errors.phone) {
+      if (/^0\d{9}$/.test(newValue)) {
+        setErrors((prev) => ({ ...prev, phone: undefined }));
+      }
+    }
   };
 
   const handleCancel = () => {
